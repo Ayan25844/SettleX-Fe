@@ -6,6 +6,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/backend/:path*',
+        destination: `${process.env.SETTLEX_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'}/api/:path*`,
+      },
+    ]
+  },
 }
 
 export default nextConfig

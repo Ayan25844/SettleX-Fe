@@ -1,4 +1,15 @@
 import { ConnectedSetupForm } from '@/components/connected-setup-form'
-export default function LenderPage(){ return <ConnectedSetupForm lender/> }
+import { ProtectedRoute } from '@/components/auth/protected-route'
 
-export const metadata = { title: 'Lender setup · SettleX', description: 'Define synthetic lending boundaries for SettleX.' }
+export default function LenderPage() {
+  return (
+    <ProtectedRoute allowedRoles={['lender']}>
+      <ConnectedSetupForm lender />
+    </ProtectedRoute>
+  )
+}
+
+export const metadata = {
+  title: 'Lender setup · SettleX',
+  description: 'Define synthetic lending boundaries for SettleX.',
+}

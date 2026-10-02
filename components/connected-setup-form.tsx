@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowRight, Banknote } from 'lucide-react'
 import { useState } from 'react'
 import { ConstraintCard, Navbar } from './settlex'
+import { useAuth } from '@/components/auth/auth-provider'
 
 const borrowerFields = [
   ['Loan amount', '₹5,00,000'],
@@ -26,6 +27,7 @@ const lenderFields = [
 ]
 
 export function ConnectedSetupForm({ lender = false }: { lender?: boolean }) {
+  const { user } = useAuth()
   const fields = lender ? lenderFields : borrowerFields
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(fields),
@@ -46,6 +48,24 @@ export function ConnectedSetupForm({ lender = false }: { lender?: boolean }) {
             values['Collateral requirement'].trim().toLowerCase() === 'required',
         }),
       )
+
+      // Ensure a counterpart borrower profile exists so negotiation can proceed seamlessly
+      if (!sessionStorage.getItem('settlex.borrower')) {
+        sessionStorage.setItem(
+          'settlex.borrower',
+          JSON.stringify({
+            loan_amount: 500000,
+            monthly_income: 85000,
+            monthly_expenses: 32000,
+            existing_emi: 8500,
+            max_emi: 16000,
+            max_interest_rate: 14,
+            preferred_tenure: 42,
+            max_tenure: 60,
+            collateral_required: false,
+          }),
+        )
+      }
       return
     }
 
@@ -63,7 +83,25 @@ export function ConnectedSetupForm({ lender = false }: { lender?: boolean }) {
         collateral_required: false,
       }),
     )
+
+    // Ensure a counterpart lender profile exists so negotiation can proceed seamlessly
+    if (!sessionStorage.getItem('settlex.lender')) {
+      sessionStorage.setItem(
+        'settlex.lender',
+        JSON.stringify({
+          max_loan_amount: 750000,
+          min_interest_rate: 11,
+          max_tenure: 60,
+          min_expected_return: 120000,
+          collateral_required: false,
+        }),
+      )
+    }
   }
+
+  // If logged in as borrower, navigate directly to negotiation since /lender is role-restricted
+  const targetHref = lender || user?.role === 'borrower' ? '/negotiation' : '/lender'
+  const buttonLabel = lender || user?.role === 'borrower' ? 'Start AI negotiation' : 'Continue as borrower'
 
   return (
     <main className="min-h-screen">
@@ -119,11 +157,11 @@ export function ConnectedSetupForm({ lender = false }: { lender?: boolean }) {
             </div>
           )}
           <Link
-            href={lender ? '/negotiation' : '/lender'}
+            href={targetHref}
             onClick={saveProfile}
             className="mt-9 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:brightness-110"
           >
-            {lender ? 'Start AI negotiation' : 'Continue as borrower'}
+            {buttonLabel}
             <ArrowRight size={16} />
           </Link>
         </div>

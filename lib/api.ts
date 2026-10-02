@@ -70,6 +70,93 @@ export interface MessageResponse {
   message: string
 }
 
+// =============================================================================
+// Matching Engine Types
+// =============================================================================
+
+export type MatchStatus = 'pending' | 'accepted' | 'rejected' | 'expired'
+
+export interface ScoreBreakdown {
+  interest: number
+  loan_amount: number
+  tenure: number
+  collateral: number
+  capacity: number
+}
+
+export interface LenderSummary {
+  max_loan_amount: number
+  min_interest_rate: number
+  max_tenure: number
+  available_capacity?: number
+  collateral_required: boolean
+}
+
+export interface MatchCandidate {
+  match_id: number
+  lender_id: number
+  match_score: number
+  status: MatchStatus
+  score_breakdown: ScoreBreakdown
+  lender_summary?: LenderSummary | null
+}
+
+export interface FindMatchesResponse {
+  matches: MatchCandidate[]
+  message?: string | null
+}
+
+export interface Match {
+  id: number
+  borrower_id: number
+  lender_id: number
+  match_score: number
+  status: MatchStatus
+  score_breakdown?: ScoreBreakdown | null
+  created_at: string
+  updated_at: string
+}
+
+export interface BorrowerProfileCreatePayload {
+  loan_amount: number
+  monthly_income: number
+  monthly_expenses: number
+  existing_emi: number
+  max_emi: number
+  max_interest_rate: number
+  preferred_tenure: number
+  max_tenure: number
+  collateral_required: boolean
+}
+
+export interface BorrowerProfileResponse extends BorrowerProfileCreatePayload {
+  id: number
+  user_id: number
+  created_at: string
+  updated_at: string
+}
+
+export interface LenderProfileCreatePayload {
+  max_loan_amount: number
+  min_interest_rate: number
+  max_tenure: number
+  min_expected_return: number
+  collateral_required: boolean
+  available_capacity?: number | null
+}
+
+export interface LenderProfileResponse extends LenderProfileCreatePayload {
+  id: number
+  user_id: number
+  available_capacity: number
+  created_at: string
+  updated_at: string
+}
+
+// =============================================================================
+// Error Handling
+// =============================================================================
+
 export class ApiError extends Error {
   status: number
   detail?: string
@@ -96,7 +183,9 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
         detailMessage = data.detail
       } else if (Array.isArray(data.detail)) {
         // FastAPI validation errors: [{ loc: [...], msg: "...", type: "..." }]
-        detailMessage = data.detail.map((err: { msg?: string }) => err.msg || 'Validation error').join(', ')
+        detailMessage = data.detail
+          .map((err: { msg?: string }) => err.msg || 'Validation error')
+          .join(', ')
       } else if (typeof data.message === 'string') {
         detailMessage = data.message
       }
@@ -298,6 +387,198 @@ export async function changeUserRole(
     token,
   )
 }
+
+// =============================================================================
+// Profile API Functions
+// =============================================================================
+
+export async function createBorrowerProfile(
+  payload: BorrowerProfileCreatePayload,
+  token?: string | null,
+): Promise<BorrowerProfileResponse> {
+  return authenticatedRequest<BorrowerProfileResponse>(
+    '/api/backend/borrower/profile',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    token,
+  )
+}
+
+export async function getBorrowerProfile(
+  token?: string | null,
+): Promise<BorrowerProfileResponse> {
+  return authenticatedRequest<BorrowerProfileResponse>(
+    '/api/backend/borrower/profile',
+    {
+      method: 'GET',
+    },
+    token,
+  )
+}
+
+export async function updateBorrowerProfile(
+  payload: Partial<BorrowerProfileCreatePayload>,
+  token?: string | null,
+): Promise<BorrowerProfileResponse> {
+  return authenticatedRequest<BorrowerProfileResponse>(
+    '/api/backend/borrower/profile',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    token,
+  )
+}
+
+/**
+ * Saves a borrower profile to backend: creates if not exists, updates if exists.
+ */
+export async function saveBorrowerProfile(
+  payload: BorrowerProfileCreatePayload,
+  token?: string | null,
+): Promise<BorrowerProfileResponse> {
+  try {
+    return await createBorrowerProfile(payload, token)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 400 && err.message.includes('already exists')) {
+      return await updateBorrowerProfile(payload, token)
+    }
+    throw err
+  }
+}
+
+export async function createLenderProfile(
+  payload: LenderProfileCreatePayload,
+  token?: string | null,
+): Promise<LenderProfileResponse> {
+  return authenticatedRequest<LenderProfileResponse>(
+    '/api/backend/lender/profile',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    token,
+  )
+}
+
+export async function getLenderProfile(
+  token?: string | null,
+): Promise<LenderProfileResponse> {
+  return authenticatedRequest<LenderProfileResponse>(
+    '/api/backend/lender/profile',
+    {
+      method: 'GET',
+    },
+    token,
+  )
+}
+
+export async function updateLenderProfile(
+  payload: Partial<LenderProfileCreatePayload>,
+  token?: string | null,
+): Promise<LenderProfileResponse> {
+  return authenticatedRequest<LenderProfileResponse>(
+    '/api/backend/lender/profile',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    token,
+  )
+}
+
+/**
+ * Saves a lender profile to backend: creates if not exists, updates if exists.
+ */
+export async function saveLenderProfile(
+  payload: LenderProfileCreatePayload,
+  token?: string | null,
+): Promise<LenderProfileResponse> {
+  try {
+    return await createLenderProfile(payload, token)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 400 && err.message.includes('already exists')) {
+      return await updateLenderProfile(payload, token)
+    }
+    throw err
+  }
+}
+
+// =============================================================================
+// Matching Engine API Functions
+// =============================================================================
+
+/**
+ * Discovers and ranks compatible lenders for the authenticated borrower.
+ */
+export async function findLenderMatches(
+  token?: string | null,
+): Promise<FindMatchesResponse> {
+  return authenticatedRequest<FindMatchesResponse>(
+    '/api/backend/matching/find',
+    {
+      method: 'POST',
+    },
+    token,
+  )
+}
+
+/**
+ * Returns matches involving the authenticated user (borrower or lender).
+ */
+export async function getMyMatches(
+  token?: string | null,
+): Promise<Match[]> {
+  return authenticatedRequest<Match[]>(
+    '/api/backend/matching/my-matches',
+    {
+      method: 'GET',
+    },
+    token,
+  )
+}
+
+/**
+ * Accepts a match and executes capacity reservation on the backend.
+ */
+export async function acceptMatch(
+  matchId: number,
+  token?: string | null,
+): Promise<Match> {
+  return authenticatedRequest<Match>(
+    `/api/backend/matching/${matchId}/accept`,
+    {
+      method: 'POST',
+    },
+    token,
+  )
+}
+
+/**
+ * Rejects a match and restores lender capacity if previously accepted.
+ */
+export async function rejectMatch(
+  matchId: number,
+  token?: string | null,
+): Promise<Match> {
+  return authenticatedRequest<Match>(
+    `/api/backend/matching/${matchId}/reject`,
+    {
+      method: 'POST',
+    },
+    token,
+  )
+}
+
+// =============================================================================
+// Legacy Negotiation Flow (Preserved)
+// =============================================================================
 
 export async function startNegotiation(
   borrower: BorrowerProfile,

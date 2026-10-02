@@ -57,7 +57,10 @@ export function Navbar() {
           ) : user.role === 'borrower' ? (
             <>
               <Link href="/borrower" className="transition hover:text-foreground">
-                Borrower setup
+                Borrower
+              </Link>
+              <Link href="/matches" className="transition hover:text-foreground">
+                Matches
               </Link>
               <Link href="/negotiation" className="transition hover:text-foreground">
                 Negotiation
@@ -66,7 +69,10 @@ export function Navbar() {
           ) : (
             <>
               <Link href="/lender" className="transition hover:text-foreground">
-                Lender setup
+                Lender
+              </Link>
+              <Link href="/lender/matches" className="transition hover:text-foreground">
+                Matches
               </Link>
               <Link href="/negotiation" className="transition hover:text-foreground">
                 Negotiation
@@ -190,14 +196,21 @@ export function Navbar() {
                     onClick={() => setOpen(false)}
                     className="py-1 transition hover:text-primary"
                   >
-                    {user.role === 'borrower' ? 'Borrower setup' : 'Lender setup'}
+                    {user.role === 'borrower' ? 'Borrower' : 'Lender'}
+                  </Link>
+                  <Link
+                    href={user.role === 'borrower' ? '/matches' : '/lender/matches'}
+                    onClick={() => setOpen(false)}
+                    className="py-1 transition hover:text-primary"
+                  >
+                    Matches
                   </Link>
                   <Link
                     href="/negotiation"
                     onClick={() => setOpen(false)}
                     className="py-1 text-primary"
                   >
-                    Negotiation room
+                    Negotiation
                   </Link>
                   <Link
                     href="/agreement"

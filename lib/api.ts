@@ -154,6 +154,94 @@ export interface LenderProfileResponse extends LenderProfileCreatePayload {
 }
 
 // =============================================================================
+// Negotiation Session Types (LangGraph)
+// =============================================================================
+
+export interface NegotiationOfferTerms {
+  amount: number
+  interest_rate: number
+  tenure_months: number
+  upfront_payment: number
+}
+
+export interface NegotiationVerification {
+  valid: boolean
+  violations: string[]
+  emi: number
+  borrower_utility: number
+  lender_utility: number
+}
+
+export interface NegotiationHistoryEvent {
+  round: number
+  agent: 'borrower' | 'lender' | 'system' | string
+  action: 'proposal' | 'counter' | 'accept' | 'reject' | string
+  reason?: string | null
+  offer?: {
+    amount: number
+    interest_rate: number
+    tenure_months: number
+    upfront_payment: number
+  } | null
+  verification?: {
+    valid: boolean
+    violations: string[]
+    emi: number
+    borrower_utility: number
+    lender_utility: number
+  } | null
+}
+
+export interface NegotiationSessionResponse {
+  session_id: number
+  match_id: number
+  borrower_id: number
+  lender_id: number
+  status: string
+  round_number: number
+  max_rounds: number
+  agreement_found: boolean
+  current_offer?: {
+    amount: number
+    interest_rate: number
+    tenure_months: number
+    upfront_payment: number
+  } | null
+  final_proposal?: {
+    amount: number
+    interest_rate: number
+    tenure_months: number
+    upfront_payment: number
+  } | null
+  verification?: {
+    valid: boolean
+    violations: string[]
+    emi: number
+    borrower_utility: number
+    lender_utility: number
+  } | null
+  history: NegotiationHistoryEvent[]
+  created_at: string
+  updated_at: string
+}
+
+export interface NegotiationOfferResponse {
+  id: number
+  session_id: number
+  round_number: number
+  agent_type: string
+  amount: number
+  interest_rate: number
+  tenure_months: number
+  upfront_payment: number
+  position: string
+  reason?: string | null
+  is_valid: boolean
+  verification_result?: NegotiationVerification | null
+  created_at: string
+}
+
+// =============================================================================
 // Error Handling
 // =============================================================================
 
@@ -571,6 +659,76 @@ export async function rejectMatch(
     `/api/backend/matching/${matchId}/reject`,
     {
       method: 'POST',
+    },
+    token,
+  )
+}
+
+// =============================================================================
+// Real LangGraph Negotiation API
+// =============================================================================
+
+/**
+ * Creates or retrieves a negotiation session for an accepted match.
+ */
+export async function createNegotiationSession(
+  matchId: number,
+  token?: string | null,
+): Promise<NegotiationSessionResponse> {
+  return authenticatedRequest<NegotiationSessionResponse>(
+    '/api/backend/negotiations/session',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ match_id: matchId }),
+    },
+    token,
+  )
+}
+
+/**
+ * Starts/executes the LangGraph negotiation session and returns the completed session.
+ */
+export async function startNegotiationSession(
+  sessionId: number,
+  token?: string | null,
+): Promise<NegotiationSessionResponse> {
+  return authenticatedRequest<NegotiationSessionResponse>(
+    `/api/backend/negotiations/${sessionId}/start`,
+    {
+      method: 'POST',
+    },
+    token,
+  )
+}
+
+/**
+ * Returns the current/final state of a negotiation session.
+ */
+export async function getNegotiationSession(
+  sessionId: number,
+  token?: string | null,
+): Promise<NegotiationSessionResponse> {
+  return authenticatedRequest<NegotiationSessionResponse>(
+    `/api/backend/negotiations/${sessionId}`,
+    {
+      method: 'GET',
+    },
+    token,
+  )
+}
+
+/**
+ * Returns persisted negotiation offers for a session.
+ */
+export async function getNegotiationOffers(
+  sessionId: number,
+  token?: string | null,
+): Promise<NegotiationOfferResponse[]> {
+  return authenticatedRequest<NegotiationOfferResponse[]>(
+    `/api/backend/negotiations/${sessionId}/offers`,
+    {
+      method: 'GET',
     },
     token,
   )

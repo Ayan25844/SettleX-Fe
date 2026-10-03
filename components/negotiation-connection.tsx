@@ -109,7 +109,12 @@ export function NegotiationProvider({ children }: { children: ReactNode }) {
       setSession(newSession)
 
       // If the session was already completed on backend (agreement reached or round limit), use it
-      if (newSession.status === 'completed' || newSession.agreement_found) {
+      const isAlreadyFinished =
+        !forceRestart &&
+        (newSession.agreement_found ||
+          ['agreement_reached', 'completed', 'rejected', 'no_agreement'].includes(newSession.status))
+
+      if (isAlreadyFinished) {
         sessionStorage.setItem('settlex.negotiation_result', JSON.stringify(newSession))
         setStatusMessage(null)
         setLoading(false)
@@ -118,9 +123,13 @@ export function NegotiationProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // 3. Start the LangGraph autonomous negotiation
+      // 3. Start the negotiation session (executes demo simulation if backend SETTLEX_DEMO_MODE=true, otherwise live LangGraph)
       setIsRunning(true)
-      setStatusMessage('Autonomous advocates negotiating via LangGraph...')
+      setStatusMessage(
+        newSession.demo_mode
+          ? 'Executing deterministic demo simulation...'
+          : 'Autonomous advocates negotiating via LangGraph...'
+      )
       const finalResult = await startNegotiationSession(newSession.session_id)
 
       // 4. Save final response to settlex.negotiation_result
@@ -200,8 +209,13 @@ export function NegotiationConnection() {
           <div>
             <div className="flex items-center gap-2">
               <p className="text-xs font-semibold uppercase tracking-[.18em] text-muted-foreground">
-                Autonomous Negotiation Session
+                {session?.demo_mode ? 'Deterministic Demo Negotiation' : 'Autonomous Negotiation Session'}
               </p>
+              {session?.demo_mode && (
+                <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  DEMO SIMULATION
+                </span>
+              )}
               {session && (
                 <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-mono text-muted-foreground">
                   Session #{session.session_id}
@@ -210,7 +224,7 @@ export function NegotiationConnection() {
             </div>
             <p className="mt-0.5 text-sm font-semibold">
               {loading || isRunning
-                ? statusMessage || 'Running LangGraph autonomous advocates…'
+                ? statusMessage || (session?.demo_mode ? 'Running demo simulation…' : 'Running autonomous advocates…')
                 : error
                   ? 'Negotiation could not be completed'
                   : session?.agreement_found && verification?.valid
@@ -241,7 +255,7 @@ export function NegotiationConnection() {
               </div>
               <div>
                 <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">Rate</dt>
-                <dd className="font-semibold">{finalProposal.interest_rate}%</dd>
+                <dd className="font-semibold">{Number(finalProposal.interest_rate).toFixed(2)}%</dd>
               </div>
               <div>
                 <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">Tenure</dt>

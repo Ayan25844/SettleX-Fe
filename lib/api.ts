@@ -168,6 +168,8 @@ export interface NegotiationVerification {
   valid: boolean
   violations: string[]
   emi: number
+  total_repayment?: number
+  total_interest?: number
   borrower_utility: number
   lender_utility: number
 }
@@ -183,13 +185,7 @@ export interface NegotiationHistoryEvent {
     tenure_months: number
     upfront_payment: number
   } | null
-  verification?: {
-    valid: boolean
-    violations: string[]
-    emi: number
-    borrower_utility: number
-    lender_utility: number
-  } | null
+  verification?: NegotiationVerification | null
 }
 
 export interface NegotiationSessionResponse {
@@ -213,14 +209,9 @@ export interface NegotiationSessionResponse {
     tenure_months: number
     upfront_payment: number
   } | null
-  verification?: {
-    valid: boolean
-    violations: string[]
-    emi: number
-    borrower_utility: number
-    lender_utility: number
-  } | null
+  verification?: NegotiationVerification | null
   history: NegotiationHistoryEvent[]
+  demo_mode?: boolean
   created_at: string
   updated_at: string
 }

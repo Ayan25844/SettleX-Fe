@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
+import type { NegotiationVerification } from '@/lib/api'
 
 export function Logo() {
   return (
@@ -410,13 +411,7 @@ export function Verifier({
   verification,
   loading = false,
 }: {
-  verification?: {
-    valid: boolean
-    violations: string[]
-    emi: number
-    borrower_utility: number
-    lender_utility: number
-  } | null
+  verification?: NegotiationVerification | null
   loading?: boolean
 } = {}) {
   const money = new Intl.NumberFormat('en-IN', {
@@ -448,9 +443,21 @@ export function Verifier({
             Deterministic validation layer · authoritative backend engine
           </p>
           {verification?.emi !== undefined && (
-            <p className="mt-1 text-xs font-medium text-foreground">
-              Authoritative EMI: <span className="font-semibold text-primary">{money.format(verification.emi)}</span>
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              <span className="font-medium text-foreground">
+                Authoritative EMI: <span className="font-semibold text-primary">{money.format(verification.emi)}</span>
+              </span>
+              {verification.total_repayment !== undefined && (
+                <span className="text-muted-foreground">
+                  · Total: <span className="font-medium text-foreground">{money.format(verification.total_repayment)}</span>
+                </span>
+              )}
+              {verification.total_interest !== undefined && (
+                <span className="text-muted-foreground">
+                  · Interest: <span className="font-medium text-foreground">{money.format(verification.total_interest)}</span>
+                </span>
+              )}
+            </div>
           )}
         </div>
         <span

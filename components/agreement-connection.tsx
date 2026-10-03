@@ -111,13 +111,20 @@ export function AgreementConnection({ children }: { children?: ReactNode }) {
   const lenderUtility = verification.lender_utility
   const nashProduct = borrowerUtility * lenderUtility
 
-  const terms = [
+  const terms: [string, string][] = [
     ['Loan amount', money.format(proposal.amount)],
-    ['Interest rate', `${proposal.interest_rate}%`],
+    ['Interest rate', `${Number(proposal.interest_rate).toFixed(2)}%`],
     ['Tenure', `${proposal.tenure_months} months`],
     ['Monthly EMI', money.format(verification.emi)],
     ['Upfront payment', money.format(proposal.upfront_payment || 0)],
   ]
+
+  if (typeof verification.total_repayment === 'number') {
+    terms.push(['Total repayment', money.format(verification.total_repayment)])
+  }
+  if (typeof verification.total_interest === 'number') {
+    terms.push(['Total interest', money.format(verification.total_interest)])
+  }
 
   return (
     <main className="min-h-screen">
@@ -127,9 +134,16 @@ export function AgreementConnection({ children }: { children?: ReactNode }) {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/12 text-primary">
             <Check size={28} />
           </div>
-          <p className="mt-6 text-xs font-semibold uppercase tracking-[.22em] text-primary">
-            Backend Verified Agreement · Session #{result.session_id}
-          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[.22em] text-primary">
+              Backend Verified Agreement · Session #{result.session_id}
+            </p>
+            {result.demo_mode && (
+              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold tracking-wider text-amber-400">
+                DEMO SIMULATION
+              </span>
+            )}
+          </div>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-.05em] sm:text-5xl">
             Agreement reached
           </h1>
@@ -147,11 +161,18 @@ export function AgreementConnection({ children }: { children?: ReactNode }) {
               </p>
               <p className="mt-1 text-lg font-medium">Negotiated loan contract</p>
             </div>
-            <span className="rounded-full bg-primary/12 px-3 py-1.5 text-xs font-semibold text-primary">
-              VERIFIED
-            </span>
+            <div className="flex items-center gap-2">
+              {result.demo_mode && (
+                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-400">
+                  DEMO SIMULATION
+                </span>
+              )}
+              <span className="rounded-full bg-primary/12 px-3 py-1.5 text-xs font-semibold text-primary">
+                VERIFIED
+              </span>
+            </div>
           </div>
-          <div className="grid gap-4 py-7 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid gap-4 py-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {terms.map(([label, value]) => (
               <div key={label}>
                 <p className="text-xs text-muted-foreground">{label}</p>

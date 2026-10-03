@@ -113,21 +113,10 @@ function MatchesContent() {
     try {
       const updatedMatch = await acceptMatch(candidate.match_id)
 
-      // Store in sessionStorage for seamless handover to negotiation room
+      // Store accepted match in sessionStorage for handover to negotiation room
       sessionStorage.setItem('settlex.accepted_match', JSON.stringify(updatedMatch))
-
-      if (candidate.lender_summary) {
-        sessionStorage.setItem(
-          'settlex.lender',
-          JSON.stringify({
-            max_loan_amount: candidate.lender_summary.max_loan_amount,
-            min_interest_rate: candidate.lender_summary.min_interest_rate,
-            max_tenure: candidate.lender_summary.max_tenure,
-            min_expected_return: 1.15,
-            collateral_required: candidate.lender_summary.collateral_required,
-          }),
-        )
-      }
+      sessionStorage.removeItem('settlex.negotiation_session')
+      sessionStorage.removeItem('settlex.negotiation_result')
 
       setAcceptedSuccessId(candidate.match_id)
       setCandidates((prev) =>

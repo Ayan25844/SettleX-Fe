@@ -23,10 +23,10 @@ export function JudgeGuide({ step, title, what, why, next }: JudgeGuideProps) {
           </div>
           <div>
             <span className="font-semibold uppercase tracking-wider text-primary">
-              Judge Evaluation Guide · Step {step}: {title}
+             Step {step}: {title}
             </span>
             <p className="text-[11px] text-muted-foreground hidden sm:block">
-              Hackathon Context: Explaining the fintech mechanics of this step
+              
             </p>
           </div>
         </div>

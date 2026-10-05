@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+
 export default function AgreementPage() {
-  return null
+  redirect('/demo?step=6')
 }

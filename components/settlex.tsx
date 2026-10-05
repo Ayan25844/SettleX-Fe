@@ -13,6 +13,7 @@ import {
   Handshake,
   LogOut,
   Menu,
+  Play,
   ShieldCheck,
   Sparkles,
   Target,
@@ -45,7 +46,15 @@ export function Navbar() {
       <Logo />
 
       {/* Desktop Navigation */}
-      <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
+      <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
+        <Link
+          href="/demo"
+          className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary/20"
+        >
+          <Play size={11} className="fill-current" />
+          <span>Interactive Demo</span>
+        </Link>
+
         <Link href="/how-it-works" className="transition hover:text-foreground">
           How it works
         </Link>
@@ -172,6 +181,16 @@ export function Navbar() {
                 </span>
               </div>
             )}
+
+            <Link
+              href="/demo"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 py-1.5 font-bold text-primary"
+            >
+              <Play size={13} className="fill-primary" />
+              <span>Interactive Demo</span>
+              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold">Simulated</span>
+            </Link>
 
             <Link
               href="/how-it-works"
@@ -576,6 +595,7 @@ export {
   Gavel,
   Handshake,
   LogOut,
+  Play,
   ShieldCheck,
   Sparkles,
   UserIcon,
